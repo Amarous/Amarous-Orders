@@ -2,7 +2,6 @@ import streamlit as st
 from google import genai
 from google.genai import types
 
-# 1. إعدادات الدخول (عشان موقعك يبقى مؤمن)
 if 'login' not in st.session_state:
     st.session_state.login = False
 
@@ -17,37 +16,42 @@ if not st.session_state.login:
         else:
             st.error("بيانات خطأ")
 else:
-    # 2. واجهة تطبيقك اللي صممته في AI Studio
-    st.title("🧠 تطبيق Gemini المخصص (Thinking & Search)")
+    st.title("🤖 تطبيق Gemini الذكي")
     
-    # ضع مفتاحك هنا (الذي يبدأ بـ AIza)
+    # ضع مفتاحك هنا
     GEMINI_API_KEY = "AIzaSyC8njO_svdjYqKO9eMH8DkklfqHfjyiYIQ"
-    
     client = genai.Client(api_key=GEMINI_API_KEY)
     
-    user_input = st.text_area("اسأل تطبيقك المخصص (سيفكر بعمق ويبحث في جوجل):")
+    user_input = st.text_area("اسأل تطبيقك المخصص:")
 
     if st.button("إرسال"):
         if user_input:
-            with st.spinner('جاري التفكير والبحث...'):
+            # قائمة بالموديلات المتاحة لنجربها بالترتيب
+            models_to_try = [
+                "gemini-2.0-flash-exp", 
+                "gemini-1.5-flash", 
+                "gemini-1.5-pro"
+            ]
+            
+            success = False
+            for model_name in models_to_try:
                 try:
-                    # نفس إعدادات تطبيقك من AI Studio بالظبط
-                    config = types.GenerateContentConfig(
-                        thinking_config=types.ThinkingConfig(thinking_level="HIGH"),
-                        tools=[types.Tool(googleSearch=types.GoogleSearch())],
-                    )
-
-                    # الموديل اللي أنت اخترته (أو النسخة المستقرة منه)
+                    # محاولة الاتصال بالموديل
                     response = client.models.generate_content(
-                        model="gemini-2.0-flash-thinking-exp-01-21", 
+                        model=model_name,
                         contents=user_input,
-                        config=config,
+                        config=types.GenerateContentConfig(
+                            tools=[types.Tool(googleSearch=types.GoogleSearch())]
+                        )
                     )
-                    
-                    st.success("الرد النهائي:")
+                    st.success(f"تم الرد بنجاح باستخدام موديل: {model_name}")
                     st.write(response.text)
-                    
-                except Exception as e:
-                    st.error(f"حدث خطأ: {e}")
+                    success = True
+                    break 
+                except Exception:
+                    continue 
+
+            if not success:
+                st.error("جوجل ترفض الوصول للموديلات حالياً. تأكد من تفعيل 'Pay-as-you-go' في Google Cloud أو استخدام API Key جديد تماماً.")
         else:
             st.warning("برجاء كتابة سؤال.")
