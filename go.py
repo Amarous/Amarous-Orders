@@ -1,13 +1,13 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
-# إعداد حالة تسجيل الدخول
+# 1. إعدادات الدخول (عشان موقعك يبقى مؤمن)
 if 'login' not in st.session_state:
     st.session_state.login = False
 
-# واجهة تسجيل الدخول
 if not st.session_state.login:
-    st.title("🔐 تسجيل الدخول")
+    st.title("🔐 تسجيل الدخول لتطبيقي")
     user = st.text_input("اسم المستخدم")
     pw = st.text_input("كلمة السر", type="password")
     if st.button("دخول"):
@@ -17,44 +17,37 @@ if not st.session_state.login:
         else:
             st.error("بيانات خطأ")
 else:
-    # واجهة التطبيق بعد الدخول
-    st.sidebar.button("تسجيل خروج", on_click=lambda: st.session_state.update({"login": False}))
-    st.title("🤖 تطبيق Gemini الذكي")
-
-    # --- ضع مفتاحك هنا ---
-    GEMINI_API_KEY = "AIzaSyC8njO_svdjYqKO9eMH8DkklfqHfjyiYIQ" 
-    # تأكد من استبدال الكلمة أعلاه بمفتاحك الحقيقي الذي يبدأ بـ AIza
+    # 2. واجهة تطبيقك اللي صممته في AI Studio
+    st.title("🧠 تطبيق Gemini المخصص (Thinking & Search)")
     
-    genai.configure(api_key=GEMINI_API_KEY)
+    # ضع مفتاحك هنا (الذي يبدأ بـ AIza)
+    GEMINI_API_KEY = "AIzaSyC8njO_svdjYqKO9eMH8DkklfqHfjyiYIQ"
+    
+    client = genai.Client(api_key=GEMINI_API_KEY)
+    
+    user_input = st.text_area("اسأل تطبيقك المخصص (سيفكر بعمق ويبحث في جوجل):")
 
-    user_question = st.text_area("اسأل تطبيقك الآن:", placeholder="اكتب سؤالك هنا...")
+    if st.button("إرسال"):
+        if user_input:
+            with st.spinner('جاري التفكير والبحث...'):
+                try:
+                    # نفس إعدادات تطبيقك من AI Studio بالظبط
+                    config = types.GenerateContentConfig(
+                        thinking_config=types.ThinkingConfig(thinking_level="HIGH"),
+                        tools=[types.Tool(googleSearch=types.GoogleSearch())],
+                    )
 
-    if st.button("إرسال إلى Gemini"):
-        if user_question:
-            # قائمة بالموديلات المتاحة لنجربها تلقائياً
-            models_to_try = [
-                'gemini-1.5-flash', 
-                'gemini-1.5-pro', 
-                'gemini-pro'
-            ]
-            
-            success = False
-            with st.spinner('جاري البحث عن أفضل موديل متاح في حسابك...'):
-                for model_name in models_to_try:
-                    try:
-                        model = genai.GenerativeModel(model_name)
-                        response = model.generate_content(user_question)
-                        
-                        # إذا وصلنا هنا فهذا يعني أن الموديل اشتغل!
-                        st.success(f"تم الرد بنجاح باستخدام موديل: {model_name}")
-                        st.write(response.text)
-                        success = True
-                        break 
-                    except Exception:
-                        continue # فشل؟ جرب الموديل التالي في القائمة
-            
-            if not success:
-                st.error("للأسف، جوجل ترفض جميع الموديلات حالياً.")
-                st.info("نصيحة: اذهب لـ Google AI Studio وتأكد من إنشاء API Key جديد في 'New Project'.")
+                    # الموديل اللي أنت اخترته (أو النسخة المستقرة منه)
+                    response = client.models.generate_content(
+                        model="gemini-2.0-flash-thinking-exp-01-21", 
+                        contents=user_input,
+                        config=config,
+                    )
+                    
+                    st.success("الرد النهائي:")
+                    st.write(response.text)
+                    
+                except Exception as e:
+                    st.error(f"حدث خطأ: {e}")
         else:
-            st.warning("رجاءً اكتب سؤالك أولاً.")
+            st.warning("برجاء كتابة سؤال.")
