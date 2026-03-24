@@ -1,9 +1,11 @@
 import streamlit as st
-import requests
+import google.generativeai as genai
 
+# --- الإعدادات ---
 if 'login' not in st.session_state:
     st.session_state.login = False
 
+# --- شاشة الدخول ---
 if not st.session_state.login:
     st.title("🔐 تسجيل الدخول")
     user = st.text_input("اسم المستخدم")
@@ -15,37 +17,26 @@ if not st.session_state.login:
         else:
             st.error("بيانات خطأ")
 else:
-    st.sidebar.title("إعدادات التطبيق")
-    if st.sidebar.button("تسجيل خروج"):
-        st.session_state.login = False
-        st.rerun()
-
+    # --- واجهة التطبيق ---
+    st.sidebar.button("تسجيل خروج", on_click=lambda: st.session_state.update({"login": False}))
     st.title("🤖 تطبيق Gemini الأصلي")
-    
-    # ضع مفتاح Google AI Studio هنا
+
+    # ضع مفتاحك هنا
     GEMINI_API_KEY = "AIzaSyC8njO_svdjYqKO9eMH8DkklfqHfjyiYIQ"
+    genai.configure(api_key=GEMINI_API_KEY)
 
     user_question = st.text_area("تحدث مع تطبيقك:", placeholder="اكتب سؤالك هنا...")
 
     if st.button("إرسال إلى Gemini"):
         if user_question:
-            # الرابط المستقر والمجرب
-            url = f"https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
-            
-            headers = {'Content-Type': 'application/json'}
-            data = {"contents": [{"parts": [{"text": user_question}]}]}
-            
             try:
-                response = requests.post(url, headers=headers, json=data)
-                result = response.json()
-                
-                if response.status_code == 200:
-                    answer = result['candidates'][0]['content']['parts'][0]['text']
-                    st.success("رد Gemini:")
-                    st.write(answer)
-                else:
-                    st.error(f"خطأ: {result.get('error', {}).get('message', 'حدث خطأ ما')}")
+                # محاولة استخدام الموديل المتاح في حسابك تلقائياً
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                response = model.generate_content(user_question)
+                st.success("رد Gemini:")
+                st.write(response.text)
             except Exception as e:
-                st.error(f"فشل الاتصال: {e}")
+                st.error(f"حدث خطأ في الاتصال بجوجل: {e}")
+                st.info("نصيحة: تأكد أن الـ API Key مفعل في Google AI Studio")
         else:
             st.warning("رجاءً اكتب سؤالك أولاً.")
