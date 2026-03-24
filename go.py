@@ -19,7 +19,7 @@ else:
     st.title("🤖 تطبيق Gemini الذكي")
     
     # ضع مفتاحك هنا
-    GEMINI_API_KEY = "AIzaSyC8njO_svdjYqKO9eMH8DkklfqHfjyiYIQ"
+    GEMINI_API_KEY = "AIzaSyD2LJKLk16l0otJVTIwLvs1d1ib6__HiDQ"
     client = genai.Client(api_key=GEMINI_API_KEY)
     
     user_input = st.text_area("اسأل تطبيقك المخصص:")
