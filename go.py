@@ -1,12 +1,9 @@
 import streamlit as st
 import requests
-import json
 
-# --- 1. إعدادات الأمان ومنع الأخطاء ---
+# --- 1. الإعدادات ---
 if 'login' not in st.session_state:
     st.session_state.login = False
-if 'user_name' not in st.session_state:
-    st.session_state.user_name = ""
 
 # --- 2. شاشة الدخول ---
 if not st.session_state.login:
@@ -16,35 +13,33 @@ if not st.session_state.login:
     if st.button("دخول"):
         if user == "admin" and pw == "123":
             st.session_state.login = True
-            st.session_state.user_name = user
             st.rerun()
         else:
             st.error("بيانات خطأ")
 else:
-    # --- 3. واجهة التطبيق بعد الدخول ---
-    st.sidebar.title(f"مرحباً {st.session_state.user_name}")
+    # --- 3. واجهة Gemini (تطبيقك الأصلي) ---
+    st.sidebar.title("إعدادات التطبيق")
     if st.sidebar.button("تسجيل خروج"):
         st.session_state.login = False
         st.rerun()
 
-    st.title("🚀 مساعدي الذكي (نسخة Groq السريعة)")
+    st.title("🤖 تطبيق Gemini الأصلي")
     
-    # ضع مفتاح Groq هنا (الذي يبدأ بـ gsk_...)
-    GROQ_API_KEY = "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"
+    # ضع مفتاح Google AI Studio هنا (الذي يبدأ بـ AIza)
+    GEMINI_API_KEY = "AIzaSyC8njO_svdjYqKO9eMH8DkklfqHfjyiYIQ"
 
-    user_question = st.text_input("اسألني أي شيء:")
+    user_question = st.text_area("تحدث مع تطبيقك الذي صممته:", placeholder="اكتب سؤالك هنا...")
 
-    if st.button("إرسال"):
+    if st.button("إرسال إلى Gemini"):
         if user_question:
-            # استخدام محرك Groq الموثوق
-            url = "https://api.groq.com/openai/v1/chat/completions"
-            headers = {
-                "Authorization": f"Bearer {GROQ_API_KEY}",
-                "Content-Type": "application/json"
-            }
+            # الرابط العالمي المستقر لـ Gemini 1.5 Flash
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+            
+            headers = {'Content-Type': 'application/json'}
             data = {
-                "model": "llama-3.1-8b-instant",
-                "messages": [{"role": "user", "content": user_question}]
+                "contents": [{
+                    "parts": [{"text": user_question}]
+                }]
             }
             
             try:
@@ -52,15 +47,13 @@ else:
                 result = response.json()
                 
                 if response.status_code == 200:
-                    answer = result['choices'][0]['message']['content']
-                    st.success("الرد:")
+                    # استخراج الرد من هيكل بيانات جوجل
+                    answer = result['candidates'][0]['content']['parts'][0]['text']
+                    st.success("رد Gemini:")
                     st.write(answer)
-                    
-                    # حفظ المحادثة
-                    with open("chat_logs.txt", "a", encoding="utf-8") as f:
-                        f.write(f"سؤال: {user_question} | رد: {answer}\n")
-                        f.write("-" * 20 + "\n")
                 else:
-                    st.error(f"خطأ في الاتصال: {result['error']['message']}")
+                    st.error(f"خطأ من جوجل: {result.get('error', {}).get('message', 'خطأ غير معروف')}")
             except Exception as e:
-                st.error(f"فشل الاتصال: {e}")
+                st.error(f"فشل الاتصال بجوجل: {e}")
+        else:
+            st.warning("رجاءً اكتب سؤالك أولاً.")
