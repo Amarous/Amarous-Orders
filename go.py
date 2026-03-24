@@ -33,8 +33,7 @@ else:
     if st.button("إرسال إلى Gemini"):
         if user_question:
             # الرابط العالمي المستقر لـ Gemini 1.5 Flash
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
-            
+url = f"https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"            
             headers = {'Content-Type': 'application/json'}
             data = {
                 "contents": [{
