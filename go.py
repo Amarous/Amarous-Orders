@@ -1,60 +1,61 @@
 import streamlit as st
-from groq import Groq
+from google import genai
+from google.genai import types
 
-# --- إعدادات الهوية ---
-st.set_page_config(page_title="Amarous Orders", page_icon="🛍️", layout="wide")
+# --- 1. إعدادات الهوية (أماروس) ---
+st.set_page_config(page_title="Amarous Orders - AI Studio", page_icon="🛍️", layout="wide")
 
 if 'login' not in st.session_state: st.session_state.login = False
-if 'user_role' not in st.session_state: st.session_state.user_role = None
 
-# --- واجهة تسجيل الدخول ---
+# --- 2. واجهة الدخول (bego / 992023) ---
 if not st.session_state.login:
-    st.markdown("<h1 style='text-align: center;'>🔐 Amarous Login</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>🔐 دخول نظام أماروس المخصص</h1>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        user_type = st.selectbox("نوع المستخدم", ["Admin (bego)", "Stock Keeper (kota)"])
         user = st.text_input("اسم المستخدم")
         pw = st.text_input("كلمة السر", type="password")
-        if st.button("دخول النظام"):
+        if st.button("دخول"):
             if user == "bego" and pw == "992023":
                 st.session_state.login = True
-                st.session_state.user_role = "admin"
                 st.rerun()
-            elif user == "kota" and pw == "kota123":
-                st.session_state.login = True
-                st.session_state.user_role = "stock_keeper"
-                st.rerun()
-            else:
-                st.error("بيانات الدخول غير صحيحة")
+            else: st.error("بيانات خطأ")
 else:
-    # --- واجهة التطبيق الذكي ---
-    st.sidebar.image("https://i.ibb.co/6c2Y6y2/logo.jpg", width=100)
-    st.sidebar.title(f"مرحباً {st.session_state.user_role}")
+    # --- 3. تصميم تطبيقك من AI Studio ---
+    st.image("https://i.ibb.co/6c2Y6y2/logo.jpg", width=120)
+    st.title("🚀 Amarous Orders - AI System")
     
-    # محرك Groq (استبدل gsk_... بمفتاحك الحقيقي)
-    client = Groq(api_key="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")
+    # حط المفتاح الجديد هنا (اللي عملته في New Project)
+    API_KEY = "AIzaSyBEB4CIiKhaa-bntCINzcfvhF51ovLmIGo"
     
-    st.title("🤖 مساعد أماروس الذكي")
-    user_input = st.text_area("اسأل تطبيقك (يفكر ويبحث الآن):")
+    try:
+        client = genai.Client(api_key=API_KEY)
+        
+        # --- واجهة الإدخال المخصصة (زي اللي في صورتك) ---
+        user_input = st.text_area("أدخل تفاصيل الأوردر أو الملف (سيتم تطبيق التفكير والبحث):")
 
-    if st.button("إرسال"):
-        if user_input:
-            with st.spinner('جاري التحليل...'):
-                try:
-                    chat_completion = client.chat.completions.create(
-                        messages=[
-                            {"role": "system", "content": "أنت نظام أماروس الخبير في إدارة الفواتير والطلبات."},
-                            {"role": "user", "content": user_input}
-                        ],
-                        model="llama-3.3-70b-versatile",
+        if st.button("تنفيذ التصميم (Generate)"):
+            if user_input:
+                with st.spinner('جاري تشغيل محرك Gemini المخصص...'):
+                    # إعدادات الـ Thinking والبحث اللي أنت عاملها
+                    config = types.GenerateContentConfig(
+                        thinking_config=types.ThinkingConfig(thinking_level="HIGH"),
+                        tools=[types.Tool(googleSearch=types.GoogleSearch())],
                     )
-                    st.success("الرد:")
-                    st.write(chat_completion.choices[0].message.content)
-                except Exception as e:
-                    st.error(f"عذراً، هناك مشكلة في المفتاح: {e}")
-        else:
-            st.warning("اكتب شيئاً أولاً.")
 
-    if st.sidebar.button("🚪 تسجيل خروج"):
+                    # الموديل اللي بيشغل التصميم ده حالياً أونلاين
+                    response = client.models.generate_content(
+                        model="gemini-2.0-flash-thinking-exp-01-21",
+                        contents=user_input,
+                        config=config,
+                    )
+                    
+                    st.success("النتيجة طبقاً لتصميمك:")
+                    st.write(response.text)
+            else: st.warning("اكتب شيئاً...")
+                
+    except Exception as e:
+        st.error(f"خطأ في الربط: {e}")
+
+    if st.sidebar.button("🚪 خروج"):
         st.session_state.login = False
         st.rerun()
